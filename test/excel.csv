@@ -1,0 +1,7 @@
+Name,account,Note,URL,Password
+DAXML Weblogic Console,system,"Missing password.  1 test, 2 test, 3 test",http://systemname/console
+ERPXML Weblogic Console,system,"1 line
+2 line
+3 line",http://systemname/console,pwd
+ERPXML Weblogic Console,system2,duplicate,http://newurl,diffpwd
+QuotewithNote,userid,"This is a ""note"" with quotes.  Heh, guess name should be NotewithQuote then.",,userpwd

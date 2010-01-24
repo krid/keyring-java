@@ -1,0 +1,69 @@
+Category: My Cards
+
+Card Name fake visa
+Card Type Credit Card
+Credit Card Type visa
+Card Provider fake visa
+Card Number 1234-4566-7899
+Expiration Date 01/2012
+Name on Card joe smoe
+Phone Number 800-867-5309
+PIN 123
+URL www.fakevisa.com
+User Name joes
+Password fakepass
+3-digit CVC# 123
+Start Date star test
+
+Card Name fake checking acct
+Card Type Bank Account
+Bank Name fake checking acct
+Account Type Checking
+Account Number 8887756564
+Other Information other fake
+Telephone 800-888-7894
+PIN 1234
+Sort Code sort fake
+SWIFT Code swift fake
+URL www.fakechecking.com
+User Name joes2
+Password 1234asdfjkl;9876reallylongpassword
+ABA/Routing # 9999999998
+PIN2 pin2 fake
+
+Category: Other junk
+
+Card Name fake Driver's License
+Card Type Driver's License
+Driver's License Number a5975314
+City/Location bev hills
+Date Issued 01/2009
+Expiration Date 01/2020
+Other Info other fake
+State/Province ca
+URL www.fakelicense.com
+Class c
+Phone Number 800-867-5309
+
+Card Name fake account
+Card Type Password
+System my pc
+User Name dunno
+Password 789456123
+URL www.fakepc.com
+Other other fake
+Account Type fake accout
+PIN 987654321
+Phone Number 900-555-1212
+
+Card Name fake email
+Card Type Email Account
+User Name joeshmoe
+Password 1234joeshmoe789
+Outgoing SMTP Server smtp.joes.com
+Incoming Pop Server pop.joes.com
+Access Phone Number 888-867-5309
+Support URL www.yahoojoeshmoe.com
+Support Phone Number 877-867-5309
+System yahoo.com
+

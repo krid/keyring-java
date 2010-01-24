@@ -1,0 +1,30 @@
+2010-01-24  Dirk Bergstrom  <krid@otisbean.com>
+
+Major refactoring and a redesign of the build process.  The single GNU
+Keyring converter has been joined by converters for CodeWallet,
+eWallet and CSV, contributed by Matt Williams.
+
+There is now an abstract base Converter class with a factory method
+that will return an appropriate worker class based on the requested
+type.  All the converter code has been moved to its own package in 
+preparation for view/edit functionality in a futur version.  Added
+KeyringUI class to handle user interaction.
+
+All the dependencies are now collected in jar files in lib/, which are
+re-jarred into the final distribution during the ant build.
+
+	* src/com/otisbean/keyring/Ring.java: Updated for improved security.
+	(encrypt): Add salt before encrypting.
+	(Ring): Generate salt from random characters.
+	(getExportData): Use new signature for encrypt().
+	(saltString): Generate random characters for salting.
+	(DB_SALT_LENGTH, ITEM_SALT_LENGTH): Constants for salt size.
+
+	* src/com/otisbean/keyring/Item.java (toJSONString): Use new signature for
+	Ring.encrypt().
+	
+	* test/*: Sample files to test converter code.
+	 
+2009-12-20  Dirk Bergstrom  <krid@otisbean.com>
+
+Initial creation.

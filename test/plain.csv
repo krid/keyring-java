@@ -1,0 +1,7 @@
+Name,account,Note,URL,Password
+Has No Password,system,"Missing password.  1 test, 2 test, 3 test",http://systemname/console
+Has a duplicate,system,"line 1
+line 2
+line 3",http://systemname/console,pwd
+Has a duplicate,system2,duplicate,http://newurl,diffpwd
+QuotewithNote,userid,"This is a \"note\" with quotes.  Heh, guess name should be NotewithQuote then.",,userpwd

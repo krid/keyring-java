@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Keyring" default="dist" basedir=".">
+    <description>
+        Build Keyring jar
+    </description>
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="dist"  location="dist"/>
+  <property name="lib"  location="lib"/>
+  <property name="ostermillerjar"  location="${lib}/ostermiller-csv-excel.jar"/>
+  <property name="gnukeyringjar"  location="${lib}/gnukeyring.jar"/>
+  <property name="iharderjar"  location="${lib}/iharder.jar"/>
+  <property name="jsonsimplejar"  location="${lib}/json_simple-1.1.jar"/>
+
+  <path id="classpath">
+	<pathelement location="${ostermillerjar}"/>
+	<pathelement location="${gnukeyringjar}"/>
+	<pathelement location="${iharderjar}"/>
+	<pathelement location="${jsonsimplejar}"/>
+  </path>
+	
+  <target name="init">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}">
+  	  <classpath refid="classpath"/>
+    </javac>
+  </target>
+
+  <target name="dist" depends="clean, compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}"/>
+
+    <!-- Jar up the classes and the source, along with this file -->
+    <jar jarfile="${dist}/keyring-converter-${DSTAMP}.jar" index="true">
+         <fileset dir="${build}"/>
+         <fileset dir="${src}"/>
+         <fileset file="build.xml"/>
+    	 <zipfileset src="${ostermillerjar}" includes="**/*"/>
+    	 <zipfileset src="${gnukeyringjar}" includes="**/*"/>
+    	 <zipfileset src="${iharderjar}" includes="**/*"/>
+    	 <zipfileset src="${jsonsimplejar}" includes="**/*"/>
+         <manifest>
+         	<attribute name="Built-By" value="${user.name}"/>
+         	<!-- Set the class that will be called when the jar is run -->
+         	<attribute name="Main-Class" value="com.otisbean.keyring.KeyringUI"/>
+         </manifest>
+     </jar>
+  </target>
+
+  <target name="clean"
+        description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+</project>

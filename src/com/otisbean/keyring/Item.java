@@ -34,7 +34,7 @@ public class Item implements JSONAware {
 	
 	// ENCRYPTED_ATTRS: ['username', 'pass', 'url', 'notes'],
 	
-	// PLAINTEXT_ATTRS: ['title', 'category', 'created', 'viewed', 'modified'],
+	// PLAINTEXT_ATTRS: ['title', 'category', 'created', 'viewed', 'changed'],
 
 	private Ring ring;
 	private String username;
@@ -45,10 +45,10 @@ public class Item implements JSONAware {
 	private int category;
 	private long created;
 	private long viewed;
-	private long modified;
+	private long changed;
 	
 	public Item(Ring ring, String username, String pass, String url, String notes,
-			String title, String categoryName, long created, long viewed, long modified) {
+			String title, String categoryName, long created, long viewed, long changed) {
 		super();
 		this.ring = ring;
 		this.username = username;
@@ -58,7 +58,7 @@ public class Item implements JSONAware {
 		this.title = title;
 		this.created = created;
 		this.viewed = viewed;
-		this.modified = modified;
+		this.changed = changed;
 		this.category = ring.categoryIdForName(categoryName);
 	}
 	
@@ -85,7 +85,7 @@ public class Item implements JSONAware {
 		// Dates are stored as an empty string if undefined
 		itemJson.put("created", created == 0 ? "" : created);
 		itemJson.put("viewed", viewed == 0 ? "" : viewed);
-		itemJson.put("modified", modified == 0 ? "" : modified);
+		itemJson.put("changed", changed == 0 ? "" : changed);
 		itemJson.put("encrypted_data", cryptedJson);
 
 		return itemJson.toJSONString();
@@ -133,11 +133,11 @@ public class Item implements JSONAware {
 	public void setViewed(long viewed) {
 		this.viewed = viewed;
 	}
-	public long getModified() {
-		return modified;
+	public long getChanged() {
+		return changed;
 	}
-	public void setModified(long modified) {
-		this.modified = modified;
+	public void setChanged(long changed) {
+		this.changed = changed;
 	}
 	public String getCategory() {
 		return ring.categoryNameForId(category);

@@ -1,3 +1,11 @@
+2010-02-17  Dirk Bergstrom  <krid@otisbean.com>
+
+GnuKeyring converter was messing up created and modified dates.  Fixes gh-1.
+
+	* src/com/otisbean/keyring/Item.java: s/modified/changed/g.  Duh.
+
+	* lib/gnukeyring.jar: Fix off-by-one error in date month handling.
+
 2010-01-24  Dirk Bergstrom  <krid@otisbean.com>
 
 Major refactoring and a redesign of the build process.  The single GNU

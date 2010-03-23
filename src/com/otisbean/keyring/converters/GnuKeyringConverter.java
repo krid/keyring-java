@@ -43,15 +43,15 @@ public class GnuKeyringConverter extends Converter {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public int export(String outPassword, String pdbPassword, String pdbFile,
-			String outFile) throws Exception {
+	public Ring convert(String pdbFile, String pdbPassword, String outPassword)
+	        throws Exception {
 		PDBKeyringLibrary keylib = new net.sf.gnukeyring.decoder.PDBKeyringLibrary();
 		keylib.setFilename(new File(pdbFile));
 		if (!keylib.unlock(pdbPassword)) {
 			throw new Exception("Can't unlock " + pdbFile);
 		}
 		List entries = keylib.getEntries();
-		Ring ring = new Ring(SCHEMA_VERSION, outPassword);
+		Ring ring = new Ring(outPassword);
 
 		int exported = 0;
 		for (Iterator i = entries.iterator(); i.hasNext();) {
@@ -70,7 +70,6 @@ public class GnuKeyringConverter extends Converter {
 			exported++;
 		}
 
-		writeOutputFile(ring, outFile);
-		return exported;
+		return ring;
 	}
 }

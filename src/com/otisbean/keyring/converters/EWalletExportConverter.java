@@ -117,10 +117,10 @@ public class EWalletExportConverter extends Converter {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public int export(String outPassword, String inPassword, String inFile,
-			String outFile) throws Exception {
+	public Ring convert(String inFile, String inPassword, String outPassword)
+	        throws Exception {
 		Collection<String[]> entries = readInputFile(inFile);
-		Ring ring = new Ring(SCHEMA_VERSION, outPassword);
+		Ring ring = new Ring(outPassword);
 
 		Date now = new Date();
 		int exported = 0;
@@ -140,9 +140,7 @@ public class EWalletExportConverter extends Converter {
 					category, changed, changed, changed));
 			exported++;
 		}
-
-		writeOutputFile(ring, outFile);
-		return exported;
+		return ring;
 	}
 
 	private String detectEncoding(InputStream is) {

@@ -19,22 +19,22 @@
  */
 package com.otisbean.keyring;
 
-import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 /**
  * A single item on a Keyring.
  *
  * @author Dirk Bergstrom
  */
-public class Item implements JSONAware {
+public class Item implements JSONAware, Comparable<Item> {
 	
 	// ENCRYPTED_ATTRS: ['username', 'pass', 'url', 'notes'],
 	
-	// PLAINTEXT_ATTRS: ['title', 'category', 'created', 'viewed', 'modified'],
+	// PLAINTEXT_ATTRS: ['title', 'category', 'created', 'viewed', 'changed'],
 
 	private Ring ring;
 	private String username;
@@ -45,10 +45,13 @@ public class Item implements JSONAware {
 	private int category;
 	private long created;
 	private long viewed;
-	private long modified;
+	private long changed;
+	private String encryptedData;
+	private boolean locked;
 	
 	public Item(Ring ring, String username, String pass, String url, String notes,
-			String title, String categoryName, long created, long viewed, long modified) {
+			String title, String categoryName, long created, long viewed, long changed)
+	        throws GeneralSecurityException, KeyringException {
 		super();
 		this.ring = ring;
 		this.username = username;
@@ -56,68 +59,162 @@ public class Item implements JSONAware {
 		this.url = url;
 		this.notes = notes;
 		this.title = title;
+		this.category = ring.categoryIdForName(categoryName);
 		this.created = created;
 		this.viewed = viewed;
-		this.modified = modified;
-		this.category = ring.categoryIdForName(categoryName);
+		this.changed = changed;
+		lock();
 	}
 	
+	/**
+	 * Create a new Item, setting created/viewed/changed to now.
+	 */
+	public Item(Ring ring, String username, String pass, String url, String notes,
+			String title, int categoryId)
+		    throws GeneralSecurityException, KeyringException {
+		super();
+		this.ring = ring;
+		this.username = username;
+		this.pass = pass;
+		this.url = url;
+		this.notes = notes;
+		this.title = title;
+		this.category = categoryId;
+		this.created = this.viewed = this.changed = System.currentTimeMillis();
+		lock();
+	}
+	
+	public Item(Ring ring, JSONObject rawItem) {
+		super();
+		this.ring = ring;
+		encryptedData = (String) rawItem.get("encrypted_data");
+		title = (String) rawItem.get("title");
+		long tmpCat = (Long) rawItem.get("category");
+		category = (int) tmpCat;
+		created = (Long) rawItem.get("created");
+		viewed = (Long) rawItem.get("viewed");
+		changed = (Long) rawItem.get("changed");
+		// TODO Unlock and re-lock the item to validate that the encrypted data is valid?
+		//unlock();
+		//lock();
+		locked = true;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public String toJSONString() {
-		JSONObject crypted = new JSONObject();
-		crypted.put("username", username);
-		crypted.put("pass", pass);
-		crypted.put("url", url);
-		crypted.put("notes", notes);
-		String cryptedJson;
-		try {
-			cryptedJson = ring.encrypt(crypted.toJSONString(), Ring.ITEM_SALT_LENGTH);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		} catch (GeneralSecurityException e) {
-			throw new RuntimeException(e);
+		if (! locked) {
+			try {
+				lock();
+			} catch (GeneralSecurityException e) {
+				throw new RuntimeException(e);
+			} catch (KeyringException e) {
+				throw new RuntimeException(e);
+			}
 		}
-
 		JSONObject itemJson = new JSONObject();
 		itemJson.put("title", title);
 		itemJson.put("category", category);
 		// Dates are stored as an empty string if undefined
 		itemJson.put("created", created == 0 ? "" : created);
 		itemJson.put("viewed", viewed == 0 ? "" : viewed);
-		itemJson.put("modified", modified == 0 ? "" : modified);
-		itemJson.put("encrypted_data", cryptedJson);
+		itemJson.put("changed", changed == 0 ? "" : changed);
+		itemJson.put("encrypted_data", encryptedData);
 
 		return itemJson.toJSONString();
 	}
 	
-	public String getUsername() {
+	@SuppressWarnings("unchecked")
+	public void lock() throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			throw new KeyringException("Locking an already locked record is wrong");
+		}
+		JSONObject crypted = new JSONObject();
+		crypted.put("username", username);
+		crypted.put("pass", pass);
+		crypted.put("url", url);
+		crypted.put("notes", notes);
+		encryptedData = ring.encrypt(crypted.toJSONString(), Ring.ITEM_SALT_LENGTH);
+		username = pass = url = notes = "";
+		locked = true;
+	}
+	
+	public void unlock() throws GeneralSecurityException, KeyringException {
+		String decryptedData;
+		decryptedData = ring.decrypt(encryptedData);
+
+        JSONObject obj;
+		try {
+			obj = (JSONObject) ring.parser.parse(decryptedData);
+		} catch (ParseException e) {
+			// ParseException's toString() method returns a good error message
+			throw new KeyringException("Unparseable JSON data: " + e);
+		}
+		username = (String) obj.get("username");
+		pass = (String) obj.get("pass");
+		url = (String) obj.get("url");
+		notes = (String) obj.get("notes");
+		locked = false;
+	}
+	
+	public String getUsername() throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		return username;
 	}
-	public void setUsername(String username) {
+	public void setUsername(String username) throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		this.username = username;
 	}
-	public String getPass() {
+	public String getPass() throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		return pass;
 	}
-	public void setPass(String pass) {
+	public void setPass(String pass) throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		this.pass = pass;
 	}
-	public String getUrl() {
+	public String getUrl() throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		return url;
 	}
-	public void setUrl(String url) {
+	public void setUrl(String url) throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		this.url = url;
 	}
-	public String getNotes() {
+	public String getNotes() throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		return notes;
 	}
-	public void setNotes(String notes) {
+	public void setNotes(String notes) throws GeneralSecurityException, KeyringException {
+		if (locked) {
+			unlock();
+		}
 		this.notes = notes;
 	}
 	public String getTitle() {
 		return title;
 	}
+	public String getEncryptedData() {
+		return encryptedData;
+	}
+	public void setEncryptedData(String encryptedData) {
+		this.encryptedData = encryptedData;
+	}
+
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -133,11 +230,17 @@ public class Item implements JSONAware {
 	public void setViewed(long viewed) {
 		this.viewed = viewed;
 	}
-	public long getModified() {
-		return modified;
+	public long getChanged() {
+		return changed;
 	}
-	public void setModified(long modified) {
-		this.modified = modified;
+	public void setChanged(long changed) {
+		this.changed = changed;
+	}
+	public int getCategoryId() {
+		return category;
+	}
+	public void setCategoryId(int cat) {
+		this.category = cat;
 	}
 	public String getCategory() {
 		return ring.categoryNameForId(category);
@@ -158,5 +261,29 @@ public class Item implements JSONAware {
 	 */
 	public void setRing(Ring ring) {
 		this.ring = ring;
+	}
+
+	@Override
+	public String toString() {
+		return title;
+	}
+	
+	@Override
+	public int compareTo(Item other) {
+		return title.compareTo(other.title);
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof Item) {
+			return title.equals(((Item) other).title);
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
+	public int hashCode() {
+		return title.hashCode();
 	}
 }

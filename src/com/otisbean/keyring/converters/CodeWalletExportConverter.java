@@ -46,10 +46,10 @@ public class CodeWalletExportConverter extends Converter {
 		needsInputFilePassword = false;
 	}
 
-	public int export(String outPassword, String unused, String inFile,
-			String outFile) throws Exception {
+	public Ring convert(String inFile, String inPassword, String outPassword)
+	        throws Exception {
 		Collection<String[]> entries = readInputFile(inFile);
-		Ring ring = new Ring(SCHEMA_VERSION, outPassword);
+		Ring ring = new Ring(outPassword);
 		Date now = new Date();
 		int exported = 0;
 		for (String[] entry : entries) {
@@ -65,8 +65,8 @@ public class CodeWalletExportConverter extends Converter {
 					category, changed, changed, changed));
 			exported++;
 		}
-		writeOutputFile(ring, outFile);
-		return exported;
+
+		return ring;
 	}
 
 	private Collection<String[]> readInputFile(String inFile)

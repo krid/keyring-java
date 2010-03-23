@@ -20,14 +20,9 @@
 package com.otisbean.keyring.converters;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import com.Ostermiller.util.CSVParser;
 import com.Ostermiller.util.ExcelCSVParser;
@@ -79,14 +74,13 @@ public class CSVConverter extends Converter {
 	}
 
 	@Override
-	public int export(String outPassword, String unused, String csvFile,
-			String outFile) throws Exception {
-
+	public Ring convert(String csvFile, String unused, String outPassword)
+	        throws Exception {
 		LabeledCSVParser lcsvp = determineFileFormat(csvFile);
 		String[] labels = lcsvp.getLabels();
 		String[][] entries = lcsvp.getAllValues();
 
-		Ring ring = new Ring(SCHEMA_VERSION, outPassword);
+		Ring ring = new Ring(outPassword);
 
 		// Determine column indexes
 		int nameidx = -1;
@@ -95,13 +89,16 @@ public class CSVConverter extends Converter {
 		int passwordidx = -1;
 		int notesidx = -1;
 		int urlidx = -1;
+		int createdidx = -1;
+		int changedidx = -1;
+		int viewedidx = -1;
 		String[] entry = labels; // entries[0];
 		for (int ii = 0; ii < entry.length; ii++) {
-			if (entry[ii].equalsIgnoreCase("name"))
+			if (entry[ii].equalsIgnoreCase("name") || entry[ii].equalsIgnoreCase("title"))
 				nameidx = ii;
 			if (entry[ii].equalsIgnoreCase("category"))
 				categoryidx = ii;
-			if (entry[ii].equalsIgnoreCase("account"))
+			if (entry[ii].equalsIgnoreCase("account") || entry[ii].equalsIgnoreCase("username"))
 				accountidx = ii;
 			if (entry[ii].equalsIgnoreCase("password"))
 				passwordidx = ii;
@@ -109,55 +106,107 @@ public class CSVConverter extends Converter {
 				notesidx = ii;
 			if (entry[ii].equalsIgnoreCase("url"))
 				urlidx = ii;
+			if (entry[ii].equalsIgnoreCase("created"))
+				createdidx = ii;
+			if (entry[ii].equalsIgnoreCase("viewed"))
+				viewedidx = ii;
+			if (entry[ii].equalsIgnoreCase("changed"))
+				changedidx = ii;
 		}
 
 		if (nameidx == -1 || accountidx == -1 || passwordidx == -1) {
-			throw new Exception("Input file format is invalid.  Must contain " +
-					"header row with labels name, category, account, password, " +
-					"notes.  Any other labels will be ignored.  The name, " +
+			throw new Exception("Input file format is invalid.  Allowed column " +
+					"headers are: name or title, category, account or username, password, " +
+					"url, note, viewed, changed, created.  Any other labels will be ignored.  The name, " +
 					"account, and password fields are mandatory, others are optional.");
 		}
 
-		Date now = new Date();
+		long now = System.currentTimeMillis();
 		int exported = 0;
 		for (int ii = 0; ii < entries.length; ii++) {
 			entry = entries[ii];
 
-			String name = nameidx == -1 ? "" : entry[nameidx];
-			if (ring.getItem(name) != null) {
-				System.out.println("WARNING: Entry #" + (ii + 1)
-						+ " - Duplicate entry, skipping: [" + name + "].");
-			} else {
-				if (accountidx >= entry.length || passwordidx >= entry.length) {
-					System.out
-							.println("WARNING: Entry #"
-									+ (ii + 1)
-									+ " is invalid: account or password not found. Entry: ["
-									+ name + "].");
-					continue;
-				}
-				String category = categoryidx == -1
-						|| categoryidx >= entry.length ? "Unfiled"
-						: entry[categoryidx];
-				String account = accountidx == -1 || accountidx >= entry.length ? ""
-						: entry[accountidx];
-				String password = passwordidx == -1
-						|| passwordidx >= entry.length ? ""
-						: entry[passwordidx];
-				String notes = notesidx == -1 || notesidx >= entry.length ? ""
-						: entry[notesidx];
-				String url = urlidx == -1 || urlidx >= entry.length ? ""
-						: entry[urlidx];
-				/* Pretend that each item was created when it was imported. */
-				long changed = now.getTime();
+			try {
+				String name = entry[nameidx];
+				if (ring.getItem(name) != null) {
+					error("Duplicate entry, skipping.", name, ii);
+				} else {
+					if (accountidx >= entry.length || passwordidx >= entry.length) {
+						error("account or password column not found.", name, ii);
+						continue;
+					}
+					String category = categoryidx == -1
+					|| categoryidx >= entry.length ? "Unfiled"
+							: entry[categoryidx];
+					String account = accountidx == -1 || accountidx >= entry.length ? ""
+							: entry[accountidx];
+					String password = passwordidx == -1
+					|| passwordidx >= entry.length ? ""
+							: entry[passwordidx];
+					String notes = notesidx == -1 || notesidx >= entry.length ? ""
+							: entry[notesidx];
+					String url = urlidx == -1 || urlidx >= entry.length ? ""
+							: entry[urlidx];
+					/* Dates default to time of import if they're not provided. */
+					long changed = changedidx == -1 || changedidx >= entry.length ? now
+							: parseDate(entry[changedidx].trim(), name, ii);
+					long viewed = viewedidx == -1 || viewedidx >= entry.length ? now
+							: parseDate(entry[viewedidx].trim(), name, ii);
+					long created = createdidx == -1 || createdidx >= entry.length ? now
+							: parseDate(entry[createdidx].trim(), name, ii);
 
-				ring.addItem(new Item(ring, account, password, url, notes,
-						name, category, changed, changed, changed));
-				exported++;
+					ring.addItem(new Item(ring, account, password, url, notes,
+							name, category, created, viewed, changed));
+					exported++;
+				}
+			}
+			catch(ArrayIndexOutOfBoundsException e) {
+				error("Wrong number of columns.", "UNKNOWN", ii);
 			}
 		}
+		return ring;
+	}
 
-		writeOutputFile(ring, outFile);
-		return exported;
+	private final String FULL_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+	/**
+	 * Attempt to parse a string into an epoch time, accepts either ISO dates
+	 * or raw epoch times.
+	 * 
+	 * Makes an effort, but it's not very robust.
+	 * 
+	 * @return Epoch time, or System.currentTimeMillis() if the input
+	 * can't be parsed. 
+	 */
+	private long parseDate(String dateVal, String name, int index) {
+		if (dateVal.contains("-")) {
+			// ISO date?
+			String format;
+			if (dateVal.length() > FULL_DATE_FORMAT.length() ) {
+				// Has time zone
+				format = FULL_DATE_FORMAT + " Z";
+			} else {
+				// Use as much of the format as we have date to match
+				format = FULL_DATE_FORMAT.substring(0, dateVal.length());
+			}
+			try {
+				return new SimpleDateFormat(format).parse(dateVal).getTime();
+			} catch (ParseException e) {
+				// Fall through to return below.
+			}
+		} else {
+			try {
+				return Long.parseLong(dateVal);
+			}
+			catch(NumberFormatException nfe) {
+				// Fall through to return below.
+			}
+		}
+		error("Unparseable date '" + dateVal + "'", name, index);
+		return System.currentTimeMillis();
+	}
+	
+	private void error(String msg, String name, int index) {
+		System.err.println("WARNING: Entry #" + (index + 1) + " (\"" + name + "\") is invalid:" +
+				msg);
 	}
 }

@@ -3,15 +3,10 @@
  */
 package com.otisbean.keyring.converters;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.otisbean.keyring.KeyringException;
 import com.otisbean.keyring.Ring;
 
 /**
@@ -20,12 +15,7 @@ import com.otisbean.keyring.Ring;
  * @author krid
  */
 public abstract class Converter {
-	
-	/**
-	 * Version 3 was the first to have categories.
-	 */
-	public static final int SCHEMA_VERSION = 4;
-	
+		
 	/**
 	 * Errors encountered during processing are stored here.
 	 */
@@ -41,9 +31,9 @@ public abstract class Converter {
 	 * 
 	 * @param type One of keyring|csv|ewallet|codewallet.
 	 * @return A converter subclass.
-	 * @throws Exception If the supplied type is invalid.
+	 * @throws KeyringException On unknown type.
 	 */
-	public static Converter getConverter(String type) throws Exception {
+	public static Converter getConverter(String type) throws KeyringException {
 		if ("keyring".equalsIgnoreCase(type)) {
 			return new GnuKeyringConverter();
 		} else if ("csv".equalsIgnoreCase(type)) {
@@ -53,7 +43,7 @@ public abstract class Converter {
 		} else if ("codewallet".equalsIgnoreCase(type)) {
 			return new CodeWalletExportConverter();
 		} else {
-			throw new Exception("Invalid type: \"" + type + "\".");
+			throw new KeyringException("Invalid type: \"" + type + "\".");
 		}
 	}
 	
@@ -68,35 +58,16 @@ public abstract class Converter {
 	 * @return The number of records converted.
 	 * @throws Exception When bad things happen.
 	 */
-	public abstract int export(String outPassword, String inPassword, String inFile,
-			String outFile) throws Exception;
-
-	/**
-	 * Write the converted data to the specified file.
-	 * 
-	 * @param ring The Ring containing converted data.
-	 * @param outFile Path to the output file
-	 * @throws IOException
-	 * @throws GeneralSecurityException
-	 */
-	protected void writeOutputFile(Ring ring, String outFile)
-	        throws IOException, GeneralSecurityException {
-		OutputStream os;
-		if (outFile.equals("-")) {
-			os = System.out;
-		} else {
-			os = new FileOutputStream(new File(outFile));
-		}
-		OutputStreamWriter writer = new OutputStreamWriter(os, "UTF-8");
-		writer.write(ring.getExportData());
-		if (outFile.equals("-")) {
-			writer.write("\n");
-			writer.flush();
-		} else {
-			writer.close();
-		}
+	public int export(String outPassword, String inPassword, String inFile,
+			String outFile) throws Exception {
+		Ring ring = convert(inFile, inPassword, outPassword);
+		ring.save(outFile);
+		return ring.getItems().size();
 	}
-	
+
+	public abstract Ring convert(String inFile, String inPassword,
+			String outPassword) throws Exception;
+		
 	/**
 	 * Make note of a processing error.
 	 */

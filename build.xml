@@ -41,7 +41,7 @@
     <mkdir dir="${dist}"/>
 
     <!-- Jar up the classes and the source, along with this file -->
-    <jar jarfile="${dist}/keyring-converter-${DSTAMP}.jar" index="true">
+    <jar jarfile="${dist}/keyring-ui-${DSTAMP}.jar" index="true">
          <fileset dir="${build}"/>
          <fileset dir="${src}"/>
          <fileset file="build.xml"/>

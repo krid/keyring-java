@@ -1,3 +1,31 @@
+2010-03-22  Dirk Bergstrom  <krid@otisbean.com>
+
+	* src/com/otisbean/keyring/gui/*: A shiny new GUI, providing full read/write
+	of items, import from other formats, export to CSV, read/write to URL
+	or file.  Still needs a lot of work and testing. 
+	
+	* src/com/otisbean/keyring/Ring.java: Beefed up to support read/write
+	GUI usage.
+	
+	* src/com/otisbean/keyring/Item.java: Beefed up to support read/write
+	GUI usage.
+	
+	* src/com/otisbean/keyring/converters/Converter.java (convert): Change
+	signature to support GUI use.
+	(export): Switch from abstract method to a wrapper around convert();
+	Method removed from all subclasses.
+	(getConverter): Throw KeyringException instead of Exception.
+	
+	* src/com/otisbean/keyring/converters/CSVConverter.java (convert): Now
+	handles date columns, and is generally more robust.  Can do a round
+	trip conversion. 
+
+	* src/com/otisbean/keyring/KeyringException.java: Exception class.
+	
+	* build.xml: Change name of jar file.
+	
+	* lib/ostermiller-csv-excel.jar: Add missing class/java files.
+	
 2010-01-24  Dirk Bergstrom  <krid@otisbean.com>
 
 Major refactoring and a redesign of the build process.  The single GNU

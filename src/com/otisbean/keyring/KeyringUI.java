@@ -24,44 +24,26 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import com.otisbean.keyring.converters.Converter;
+import com.otisbean.keyring.gui.Editor;
 
 /**
- * Translate from an external format to Keyring for webOS export format.
+ * Java desktop UI for Keyring for webOS.
  * 
  * @author Dirk Bergstrom
  */
 public class KeyringUI {
-	/**
-	 * Application name with additional information (URI).
-	 */
-	public final static String GUI_APP_NAME =
-		"KeyringUI - http://www.otisbean.com/keyring/";
-	
-	/**
-	 * Information message about the canceled file selection. 
-	 */
-	public final static String GUI_SELECTION_CANCELLED_INFO_MESSAGE =
-		"The file selection has been cancelled.";
-	
-	/**
-	 * Error message about the equal files (input==output), but this
-	 * should never occur because of the FileFilter objects for PDB/JSON.
-	 */
-	public final static String GUI_SELECTION_SAMEFILES_ERROR_MESSAGE =
-		"The inputs and output (JSON) files need to have different file names.";
 
-	/**
-	 * Generic (GUI/CONSOLE) question about the PDB password. 
-	 */
-	public final static String GENERIC_ASK_FOR_IN_PASSWORD =
-		"Enter password for input file";
+	private static void usage(int exitCode) {
+		System.err.println(
+			"Usage:\n" +
+			"java -jar keyring-ui.jar [json-db-file]\n" +
+		    "    To start up the full-featured GUI, optionally loading the given db.\n" +
+			"OR\n" +
+			"java -jar keyring-ui.jar input-file json-output-file [keyring|csv|ewallet|codewallet]\n" +
+			"    To convert input-file from the given format and write to json-output-file.");
+		System.exit(exitCode);
+	}
 	
-	/**
-	 * Generic (GUI/CONSOLE) question about the JSON password. 
-	 */
-	public final static String GENERIC_ASK_FOR_JSON_PASSWORD =
-		"Enter password for JSON (output) file";
-
 	private static String getPasswordFromConsole(String prompt) throws IOException {
 		System.out.println(prompt);
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));						
@@ -69,30 +51,35 @@ public class KeyringUI {
 	}
 
 	private static void doConsole(String[] args) throws Exception {
-		 if (args.length != 3) {
-			 System.err.println(
-					 "Usage: KeyringConverter input-file json-output-file " +
-					 "[keyring|csv|ewallet|codewallet]");
-			 System.exit(1);
-		 }
-
 		 String inFile = args[0];
 		 String jsonFile = args[1];
+		 if (inFile.equals(jsonFile)) {
+			 System.err.println("The input and output (JSON) files need to have different names.");
+			 System.exit(1);
+		 }
 		 String type = args[2];
 		 // FIXME validate path info
 		 Converter converter = Converter.getConverter(type);
 		 String inPass = null;
 		 if (converter.needsInputFilePassword) {
-			 inPass = getPasswordFromConsole(GENERIC_ASK_FOR_IN_PASSWORD + ": ");
+			 inPass = getPasswordFromConsole("Enter password for input file: ");
 		 }
-		 String jsonPass = getPasswordFromConsole(GENERIC_ASK_FOR_JSON_PASSWORD + ": ");
+		 String jsonPass = getPasswordFromConsole("Enter password for JSON (output) file: ");
 		 int count = converter.export(jsonPass, inPass, inFile, jsonFile);
 		 System.out.println(count + " Items converted and written to " + jsonFile);
 	}
 	
 	public static void main(String[] args) {
 		try {
-			doConsole(args);
+			if (args.length == 3) {
+				doConsole(args);
+			} else if (args.length == 1 && args[0].matches("^(--?[hH?](elp)?|/[hH?])$")) {
+				usage(0);
+			} else if (args.length < 2){
+				Editor.main(args);
+			} else {
+				usage(1);
+			}
 		} catch (Exception e) {
 			System.err.println("Horrible error: " + e.getMessage());
 			e.printStackTrace();

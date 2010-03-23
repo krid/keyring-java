@@ -1,5 +1,7 @@
 2010-03-22  Dirk Bergstrom  <krid@otisbean.com>
 
+	* README.txt: Update with new features.
+	
 	* src/com/otisbean/keyring/gui/*: A shiny new GUI, providing full read/write
 	of items, import from other formats, export to CSV, read/write to URL
 	or file.  Still needs a lot of work and testing. 

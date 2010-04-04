@@ -49,6 +49,9 @@ public class Item implements JSONAware, Comparable<Item> {
 	private String encryptedData;
 	private boolean locked;
 	
+	/**
+	 * Create an Item given all the values.
+	 */
 	public Item(Ring ring, String username, String pass, String url, String notes,
 			String title, String categoryName, long created, long viewed, long changed)
 	        throws GeneralSecurityException, KeyringException {
@@ -84,16 +87,27 @@ public class Item implements JSONAware, Comparable<Item> {
 		lock();
 	}
 	
+	/**
+	 * Create an item from a JSONObject sourced from a backup file.
+	 * 
+	 * The Ring need not have an active password, since the encrypted_data
+	 * blob is used as-is.
+	 * 
+	 * XXX??? Since the encrypted blob isn't decrypted, it could be corrupt. 
+	 */
 	public Item(Ring ring, JSONObject rawItem) {
 		super();
 		this.ring = ring;
 		encryptedData = (String) rawItem.get("encrypted_data");
 		title = (String) rawItem.get("title");
-		long tmpCat = (Long) rawItem.get("category");
-		category = (int) tmpCat;
-		created = (Long) rawItem.get("created");
-		viewed = (Long) rawItem.get("viewed");
-		changed = (Long) rawItem.get("changed");
+		Object tmp = rawItem.get("category");
+		category = (int) (null == tmp ? 0 : (Long) tmp);
+		tmp = rawItem.get("created");
+		created = null == tmp ? 0 : (Long) tmp;
+		tmp = rawItem.get("viewed");
+		viewed = null == tmp ? 0 : (Long) tmp;
+		tmp = rawItem.get("changed");
+		changed = null == tmp ? 0 : (Long) tmp;
 		// TODO Unlock and re-lock the item to validate that the encrypted data is valid?
 		//unlock();
 		//lock();

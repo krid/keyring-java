@@ -53,56 +53,152 @@ public class EWalletExportConverter extends Converter {
 			Reader fr = getReader(inFile);
 			BufferedReader br = new BufferedReader(fr);
 			String thisline = br.readLine();
+			String lastline = "";
 			if (null == thisline) {
 				throw new Exception("Input file is empty!");
 			}
 
+			int nameidx = 0;
+			int categoryidx = 1;
+			int accountidx = 2;
+			int passwordidx = 3;
+			int notesidx = 4;
+			int urlidx = 5;
+
 			// boolean readingName = false;
 			boolean entryStart = false;
 			boolean entryEnd = false;
+			boolean readingNote = false;
 			String[] thisEntry = new String[] { "", "", "", "", "", "" };
 			String thisCategory = "";
 
 			while (thisline != null) {
+				// log(thisline);
 				if (thisline.startsWith("Category: ")) {
-					thisCategory = thisline.substring("Category: ".length());
-					entryStart = false; // Test for multiple category support.
+					entryEnd = true;
 				} else if (thisline.length() == 0) {
-					if (entryStart) {
-						entryEnd = true;
-					} else {
-						entryEnd = false;
+					if (readingNote) {
+						thisEntry[notesidx] += thisline + "\n";
 					}
 				} else {
-					if (thisline.toLowerCase().startsWith("card name ")) {
-						entryStart = true;
-						thisEntry[0] = thisline.substring("Card Name ".length());
-					} else if (thisline.toLowerCase().startsWith("user name ")) {
-						thisEntry[2] = thisline.substring("User Name ".length());
-					} else if (thisline.toLowerCase().startsWith("password ")) {
-						thisEntry[3] = thisline.substring("Password ".length());
-					} else if (thisline.toLowerCase().startsWith("url ")) {
-						thisEntry[5] = thisline.substring("URL ".length());
+					if (!readingNote) {
+						// If we hit the next card, have
+						// to add current card to list and start the new one here.
+						if ((thisline.toLowerCase().startsWith("card name ") ||
+								(thisline.toLowerCase().startsWith("card")
+								&& !thisline.startsWith("Card Notes")
+								&& !thisline.startsWith("Card Number")
+								&& !thisline.startsWith("Card Provider")))
+								&& lastline.length() == 0) {
+							if (entryStart) {
+								// Code copied from below for adding card to list
+								thisEntry[categoryidx] = thisCategory;
+								if (cards.containsKey(thisEntry[nameidx])) {
+									log("WARNING: Duplicate entry, skipping: ["
+											+ thisEntry[nameidx] + "]");
+								} else {
+									log("Adding to list: " + thisEntry[nameidx]);
+									cards.put(thisEntry[nameidx], thisEntry);
+									thisEntry = new String[] { "", "", "", "", "", "" };
+								}
+								// entryStart = false;
+								entryEnd = false;
+							}
+							// Code copied from above for starting new card.
+							entryStart = true;
+							int keystart = 5;
+							if (thisline.startsWith("Card Name ")) {
+								keystart = "Card Name ".length();
+							}
+							thisEntry[nameidx] = thisline.substring(keystart);
+						} else if (thisline.toLowerCase().startsWith("user name ")) {
+							thisEntry[accountidx] =
+									thisline.substring("User Name ".length());
+						} else if (thisline.toLowerCase().startsWith("password ")) {
+							thisEntry[passwordidx] =
+								thisline.substring("Password ".length());
+						} else if (thisline.toLowerCase().startsWith("url ")) {
+							thisEntry[urlidx] = thisline.substring("URL "
+									.length());
+						} else if (thisline.equals("Card Notes")) {
+							readingNote = true;
+							thisEntry[notesidx] += thisline + "\n";
+						} else {
+							// Anything else, write to the notes.
+							thisEntry[notesidx] += thisline + "\n";
+						}
 					} else {
-						// Anything else, write to the notes.
-						thisEntry[4] += thisline + "\n";
+						// If we are reading a note and hit the next card, have
+						// to add current card to list and start the new one
+						// here.
+						if ((thisline.toLowerCase().startsWith("card name ") ||
+								(thisline.toLowerCase().startsWith("card")
+								&& !thisline.startsWith("Card Notes")
+								&& !thisline.startsWith("Card Number")
+								&& !thisline.startsWith("Card Provider")))
+								&& lastline.length() == 0) {
+							readingNote = false;
+							// Code copied from below for adding card to list
+							thisEntry[categoryidx] = thisCategory;
+							if (cards.containsKey(thisEntry[nameidx])) {
+								log("WARNING: Duplicate entry, skipping: ["
+										+ thisEntry[nameidx] + "]");
+							} else {
+								log("Adding to list: " + thisEntry[nameidx]);
+								cards.put(thisEntry[nameidx], thisEntry);
+								thisEntry = new String[] { "", "", "", "", "", "" };
+							}
+							entryEnd = false;
+
+							// Code copied from above for starting new card.
+							entryStart = true;
+							int keystart = 5;
+							if (thisline.startsWith("Card Name "))
+								keystart = "Card Name ".length();
+							thisEntry[nameidx] = thisline.substring(keystart);
+						} else {
+							thisEntry[notesidx] += thisline + "\n";
+						}
 					}
 				}
 
-				if (entryStart && entryEnd) {
-					thisEntry[1] = thisCategory;
-					if (cards.containsKey(thisEntry[0])) {
-						log("WARNING: Duplicate entry, skipping: ["
-										+ thisEntry[0] + "]");
-					} else {
-						cards.put(thisEntry[0], thisEntry);
-						thisEntry = new String[] { "", "", "", "", "", "" };
+				if (entryEnd) {
+					if (entryStart) {
+						thisEntry[categoryidx] = thisCategory;
+						if (cards.containsKey(thisEntry[nameidx])) {
+							log("WARNING: Duplicate entry, skipping: ["
+									+ thisEntry[nameidx] + "]");
+						} else {
+							log("Adding to list: " + thisEntry[nameidx]);
+							cards.put(thisEntry[nameidx], thisEntry);
+							thisEntry = new String[] { "", "", "", "", "", "" };
+							// entries.add(thisEntry);
+						}
 					}
 					entryEnd = false;
+					if (thisline.startsWith("Category: ")) {
+						thisCategory = thisline.substring("Category: ".length());
+						readingNote = false;
+						entryStart = false;
+					}
 				}
 
+				lastline = thisline;
 				thisline = br.readLine();
+			} // (thisline != null)
+
+			// Add last record if it hasn't been done before we hit EOF
+			if (entryStart && !entryEnd) {
+				thisEntry[categoryidx] = thisCategory;
+				if (cards.containsKey(thisEntry[nameidx])) {
+					log("WARNING: Duplicate entry, skipping: ["
+							+ thisEntry[nameidx] + "]");
+				} else {
+					log("Adding to list: " + thisEntry[nameidx]);
+					cards.put(thisEntry[nameidx], thisEntry);
+				}
 			}
+
 			br.close();
 			br = null;
 			fr.close();
@@ -111,6 +207,7 @@ public class EWalletExportConverter extends Converter {
 			logError("Exception processing input file:" + ex.getMessage());
 			throw ex;
 		}
+
 		// return entries;
 		return cards.values();
 	}
@@ -118,7 +215,7 @@ public class EWalletExportConverter extends Converter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Ring convert(String inFile, String inPassword, String outPassword)
-	        throws Exception {
+			throws Exception {
 		Collection<String[]> entries = readInputFile(inFile);
 		Ring ring = new Ring(outPassword);
 
@@ -166,8 +263,8 @@ public class EWalletExportConverter extends Converter {
 			FileInputStream fis = new FileInputStream(infileName);
 			String encoding = detectEncoding(fis);
 			fis.close();
-			log("Using " + encoding
-					+ " encoding to read input file (" + infileName + ")");
+			log("Using " + encoding + " encoding to read input file ("
+					+ infileName + ")");
 			return new InputStreamReader(new FileInputStream(infileName),
 					encoding);
 		} catch (UnsupportedEncodingException ex) {

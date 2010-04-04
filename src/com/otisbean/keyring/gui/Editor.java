@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Vector;
 
@@ -421,21 +422,25 @@ public class Editor extends Gui {
 		if (null == password) {
 			return false;
 		}
+		boolean retval;
 		try {
 			if (ring.validatePassword(password)) {
 				timeoutThread.restartTimeout();
-				return true;
+				retval = true;
 			} else {
 				msgInformation("Invalid Password");
 				timeoutThread.setTimeout(); // timed out
-				return false;
+				retval = false;
 			}
 		}
 		catch(Exception e) {
 			msgError(e, "Error processing password", false);
 			timeoutThread.setTimeout(); // timed out
-			return false;
+			retval = false;
 		}
+		// Erase password from memory
+		Arrays.fill(password, ' ');
+		return retval;
 	}
 
 	/**

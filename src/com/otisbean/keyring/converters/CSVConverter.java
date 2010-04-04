@@ -83,7 +83,7 @@ public class CSVConverter extends Converter {
 		Ring ring = new Ring(outPassword);
 
 		// Determine column indexes
-		int nameidx = -1;
+		int titleidx = -1;
 		int categoryidx = -1;
 		int accountidx = -1;
 		int passwordidx = -1;
@@ -95,7 +95,7 @@ public class CSVConverter extends Converter {
 		String[] entry = labels; // entries[0];
 		for (int ii = 0; ii < entry.length; ii++) {
 			if (entry[ii].equalsIgnoreCase("name") || entry[ii].equalsIgnoreCase("title"))
-				nameidx = ii;
+				titleidx = ii;
 			if (entry[ii].equalsIgnoreCase("category"))
 				categoryidx = ii;
 			if (entry[ii].equalsIgnoreCase("account") || entry[ii].equalsIgnoreCase("username"))
@@ -114,11 +114,11 @@ public class CSVConverter extends Converter {
 				changedidx = ii;
 		}
 
-		if (nameidx == -1 || accountidx == -1 || passwordidx == -1) {
+		if (titleidx == -1) {
 			throw new Exception("Input file format is invalid.  Allowed column " +
 					"headers are: name or title, category, account or username, password, " +
-					"url, note, viewed, changed, created.  Any other labels will be ignored.  The name, " +
-					"account, and password fields are mandatory, others are optional.");
+					"url, note, viewed, changed, created.  Any other labels will be ignored.  The title " +
+					"field is mandatory, others are optional.");
 		}
 
 		long now = System.currentTimeMillis();
@@ -127,21 +127,15 @@ public class CSVConverter extends Converter {
 			entry = entries[ii];
 
 			try {
-				String name = entry[nameidx];
-				if (ring.getItem(name) != null) {
-					error("Duplicate entry, skipping.", name, ii);
+				String title = entry[titleidx];
+				if (ring.getItem(title) != null) {
+					error("Duplicate entry, skipping.", title, ii);
 				} else {
-					if (accountidx >= entry.length || passwordidx >= entry.length) {
-						error("account or password column not found.", name, ii);
-						continue;
-					}
-					String category = categoryidx == -1
-					|| categoryidx >= entry.length ? "Unfiled"
+					String category = categoryidx == -1 || categoryidx >= entry.length ? "Unfiled"
 							: entry[categoryidx];
 					String account = accountidx == -1 || accountidx >= entry.length ? ""
 							: entry[accountidx];
-					String password = passwordidx == -1
-					|| passwordidx >= entry.length ? ""
+					String password = passwordidx == -1 || passwordidx >= entry.length ? ""
 							: entry[passwordidx];
 					String notes = notesidx == -1 || notesidx >= entry.length ? ""
 							: entry[notesidx];
@@ -149,14 +143,14 @@ public class CSVConverter extends Converter {
 							: entry[urlidx];
 					/* Dates default to time of import if they're not provided. */
 					long changed = changedidx == -1 || changedidx >= entry.length ? now
-							: parseDate(entry[changedidx].trim(), name, ii);
+							: parseDate(entry[changedidx].trim(), title, ii);
 					long viewed = viewedidx == -1 || viewedidx >= entry.length ? now
-							: parseDate(entry[viewedidx].trim(), name, ii);
+							: parseDate(entry[viewedidx].trim(), title, ii);
 					long created = createdidx == -1 || createdidx >= entry.length ? now
-							: parseDate(entry[createdidx].trim(), name, ii);
+							: parseDate(entry[createdidx].trim(), title, ii);
 
 					ring.addItem(new Item(ring, account, password, url, notes,
-							name, category, created, viewed, changed));
+							title, category, created, viewed, changed));
 					exported++;
 				}
 			}
@@ -177,7 +171,7 @@ public class CSVConverter extends Converter {
 	 * @return Epoch time, or System.currentTimeMillis() if the input
 	 * can't be parsed. 
 	 */
-	private long parseDate(String dateVal, String name, int index) {
+	private long parseDate(String dateVal, String title, int index) {
 		if (dateVal.contains("-")) {
 			// ISO date?
 			String format;
@@ -201,12 +195,12 @@ public class CSVConverter extends Converter {
 				// Fall through to return below.
 			}
 		}
-		error("Unparseable date '" + dateVal + "'", name, index);
+		error("Unparseable date '" + dateVal + "'", title, index);
 		return System.currentTimeMillis();
 	}
 	
-	private void error(String msg, String name, int index) {
-		System.err.println("WARNING: Entry #" + (index + 1) + " (\"" + name + "\") is invalid:" +
+	private void error(String msg, String title, int index) {
+		System.err.println("WARNING: Entry #" + (index + 1) + " (\"" + title + "\") is invalid:" +
 				msg);
 	}
 }

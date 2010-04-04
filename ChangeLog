@@ -1,3 +1,19 @@
+2010-04-03  Dirk Bergstrom  <krid@otisbean.com>
+
+	* src/com/otisbean/keyring/converters/EWalletExportConverter.java (readInputFile):
+	Updated with bugfixes and improvements from Matt Williams.  
+
+2010-03-23  Dirk Bergstrom  <krid@otisbean.com>
+
+	* src/com/otisbean/keyring/Item.java (Item): Check for null values in
+	the JSON input.
+	 
+	* src/com/otisbean/keyring/gui/Editor.java (checkPassword): Erase password
+	from memory when finished.
+
+	* src/com/otisbean/keyring/converters/CSVConverter.java (convert): Only
+	require the "title" column.  s/name/title/g to match usage.
+	 
 2010-03-22  Dirk Bergstrom  <krid@otisbean.com>
 
 	* README.txt: Update with new features.

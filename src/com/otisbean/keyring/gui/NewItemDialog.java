@@ -1,24 +1,27 @@
 /*
-KeyringEditor
-
-Copyright 2004 Markus Griessnig
-Vienna University of Technology
-Institute of Computer Technology
-
-KeyringEditor is based on:
-Java Keyring v0.6
-Copyright 2004 Frank Taylor <keyring@lieder.me.uk>
-
-These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details.
-*/
-
-// EditDialog.java
-
-// 15.11.2004
-
-// 17.11.2004: check for empty strings
+ * @author Dirk Bergstrom
+ *
+ * Keyring Desktop Client - Easy password management on your phone or desktop.
+ * Copyright (C) 2009-2010, Dirk Bergstrom, keyring@otisbean.com
+ * 
+ * Adapted from KeyringEditor v1.1
+ * Copyright 2006 Markus Griessnig
+ * http://www.ict.tuwien.ac.at/keyring/
+ * Markus graciously gave his assent to release the modified code under the GPLv3.
+ *     
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package com.otisbean.keyring.gui;
 
@@ -84,7 +87,7 @@ public class NewItemDialog extends JDialog implements ActionListener, PropertyCh
 	 * @param aFrame Reference to the Gui frame
 	 * @param cat Vector of category-names
 	 */
-	public NewItemDialog(Frame aFrame, Vector cat) {
+	public NewItemDialog(Frame aFrame, Vector<String> cat) {
 		super(aFrame, "New Item", true);
 
 		returnParameter = new Object[6];

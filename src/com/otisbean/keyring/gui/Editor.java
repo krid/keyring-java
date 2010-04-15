@@ -1,27 +1,27 @@
 /*
-KeyringEditor
-
-Copyright 2004 Markus Griessnig
-Vienna University of Technology
-Institute of Computer Technology
-
-KeyringEditor is based on:
-Java Keyring v0.6
-Copyright 2004 Frank Taylor <keyring@lieder.me.uk>
-
-These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details.
-*/
-
-// Editor.java
-
-// 25.11.2004
-
-// 01.12.2004: Keyring database format 5 support added
-// 05.12.2004: MenuItem Tools - Convert database added
-// 12.01.2004: Model.writeNewDatabase() in main() added
-// 24.05.2005: showitem - check no category
+ * @author Dirk Bergstrom
+ *
+ * Keyring Desktop Client - Easy password management on your phone or desktop.
+ * Copyright (C) 2009-2010, Dirk Bergstrom, keyring@otisbean.com
+ * 
+ * Adapted from KeyringEditor v1.1
+ * Copyright 2006 Markus Griessnig
+ * http://www.ict.tuwien.ac.at/keyring/
+ * Markus graciously gave his assent to release the modified code under the GPLv3.
+ *     
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package com.otisbean.keyring.gui;
 
@@ -72,7 +72,6 @@ public class Editor extends Gui {
 	 */
 	private String dbFilename = "keyring.json"; // default database to save to
 
-	private Gui gui;
 	private Ring ring;
 	private JFrame frame;
 	private PasswordTimeoutWorker timeoutThread;
@@ -254,6 +253,8 @@ public class Editor extends Gui {
 
 		// itemPane Listener
 		currentCategory.addActionListener(new currentCategorySelectionListener(this));
+		// It's just a dropdown, not really a combo box
+		currentCategory.setEditable(false);
 		currentTitle.getDocument().addDocumentListener(new documentListener(this));
 		currentUser.getDocument().addDocumentListener(new documentListener(this));
 		currentPassword.getDocument().addDocumentListener(new documentListener(this));
@@ -274,6 +275,7 @@ public class Editor extends Gui {
 		// Frame
 		frame.pack();
 		frame.setVisible(true);
+		toggleButtonsAndFields(false, false);
 
 		// Passwort Timeout
 		timeoutThread = new PasswordTimeoutWorker(this);
@@ -349,7 +351,7 @@ public class Editor extends Gui {
 		categoriesMenuItem.setEnabled(dbLoaded);
 		importMenuItem.setEnabled(! dbLoaded);
 
-		enableButtonsAndFields(dbLoaded);
+		toggleButtonsAndFields(false, dbLoaded);
 		setBtnLock(false, dbLoaded);
 	}
 	
@@ -357,17 +359,19 @@ public class Editor extends Gui {
 	 * Enable buttons according to loaded database.
 	 *
 	 * @param enabled True if database is loaded
+	 * @param newItemEnabled True if the "new item" button should be enabled
 	 */
-	private void enableButtonsAndFields(boolean enabled) {
+	private void toggleButtonsAndFields(boolean enabled, boolean newItemEnabled) {
 		delItem.setEnabled(false);
 		saveItem.setEnabled(false);
-		newItem.setEnabled(enabled);
-		currentCategory.setEditable(false);
+		saveItem.setBackground(null);
+		currentCategory.setEnabled(enabled);
 		currentTitle.setEditable(enabled);
 		currentUser.setEditable(enabled);
 		currentPassword.setEditable(enabled);
 		currentUrl.setEditable(enabled);
 		currentNotes.setEditable(enabled);
+		newItem.setEnabled(newItemEnabled);
 	}
 
 	/**
@@ -393,20 +397,22 @@ public class Editor extends Gui {
 	private void setupCategories(Vector<String> myCategories) {
 		// categoryList
 		Vector<String> displayCategories;
-		if(myCategories != null)
+		if (null != myCategories) {
 			displayCategories = new Vector<String>(myCategories);
-		else
+		} else {
 			displayCategories = new Vector<String>();
+		}
 
 		displayCategories.add(0, "All");
 		categoryList.setModel(new DefaultComboBoxModel(displayCategories));
 
 		// currentCategory
 		Vector<String> currentCategories;
-		if(myCategories != null)
-			currentCategories = (Vector<String>) myCategories.clone();
-		else
+		if (null != myCategories) {
+			currentCategories = new Vector<String>(myCategories);
+		} else {
 			currentCategories = new Vector<String>();
+		}
 
 		currentCategory.setModel(new DefaultComboBoxModel(currentCategories));
 	}
@@ -463,33 +469,26 @@ public class Editor extends Gui {
 	private void showItem() {
 		DefaultMutableTreeNode node = dynTree.getLastNode();
 
-		if(locked == true) {
+		if (locked == true || null == ring) {
 			return;
 		}
 
 		try {
 			Date ende = timeoutThread.getEndDate();
-			if(ende == null) { // timed out
+			if (null == ende) {
+				// timed out
 				clearItem();
-
 				setBtnLock(true, true);
-				enableButtonsAndFields(false);
-				saveItem.setBackground(null);
-
+				toggleButtonsAndFields(false, false);
 				return;
-			}
-			else {
+			} else {
 				timeoutThread.restartTimeout();
 			}
 
-			// no item
 			if(node == null || !(node.isLeaf()) || node.isRoot()) {
+				// no item
 				clearItem();
-
-				saveItem.setEnabled(false);
-				saveItem.setBackground(null);
-				delItem.setEnabled(false);
-
+				toggleButtonsAndFields(false, true);
 				return;
 			}
 
@@ -518,9 +517,7 @@ public class Editor extends Gui {
 
 			// initialize buttons
 			textFieldChanged = false;
-			saveItem.setEnabled(false);
-			saveItem.setBackground(null);
-			delItem.setEnabled(true);
+			toggleButtonsAndFields(true, true);
 		}
 		catch(Exception e) {
 			msgError(e, "showItem", true);
@@ -537,13 +534,29 @@ public class Editor extends Gui {
 	 * Clear item text fields.
 	 */
 	private void clearItem() {
-		currentCategory.setSelectedIndex(0);
+		if (currentCategory.getItemCount() > 0) {
+			currentCategory.setSelectedIndex(0);
+		}
 		currentTitle.setText("");
 		currentUser.setText("");
 		currentPassword.setText("");
 		currentUrl.setText("");
 		dateLabel.setText("");
 		currentNotes.setText("");
+	}
+
+	/**
+	 * Call when an item field is changed to update GUI state.
+	 * 
+	 * Enables the "save item" button, turns it green, and sets the
+	 * textFieldChanged flag.
+	 */
+	private void noticeFieldChange() {
+		if (! textFieldChanged && ! locked) {
+			textFieldChanged = true;
+			saveItem.setEnabled(true);
+			saveItem.setBackground(Color.GREEN);
+		}
 	}
 
 	// ----------------------------------------------------------------
@@ -722,11 +735,9 @@ public class Editor extends Gui {
 		 * @param e the ActionEvent to process
 		 */
 		public void actionPerformed(ActionEvent e) {
-			if (true) {
-				// FIXME
-				msgInformation("Category editing not yet supported");
-				return;
-			}
+			msgInformation("Category editing not yet supported");
+			return;
+			/* FIXME Implement this stuff!
 			if (locked == true) {
 				msgInformation("Unlock application first.");
 				return;
@@ -739,9 +750,9 @@ public class Editor extends Gui {
 			catDialog.setVisible(true);
 
 			// update category combo boxes
-			//Vector<String> newCategories = catDialog.getNewCategories(); // Java 1.5
-			Vector newCategories = catDialog.getNewCategories();
-			if(newCategories != null) { // changed categories
+			Vector<String> newCategories = catDialog.getNewCategories();
+			if (null != newCategories) {
+				// changed categories
 				setupCategories(newCategories);
 				//ring.setCategories(newCategories);
 
@@ -753,6 +764,7 @@ public class Editor extends Gui {
 					msgError(ex, "Could not save entries to " + dbFilename, false);
 				}
 			}
+		*/
 		}
 	}
 
@@ -984,10 +996,10 @@ public class Editor extends Gui {
 		 * @param e the ActionEvent to process
 		 */
 		public void actionPerformed(ActionEvent e) {
-			if(true) {
-				msgInformation("Creating a new db not currently supported.");
-				return;
-			}
+			msgInformation("Creating a new db not currently supported.");
+			return;
+
+			/* FIXME Implement this stuff!
 			if(locked == true) {
 				msgInformation("Unlock application first.");
 				return;
@@ -1000,6 +1012,7 @@ public class Editor extends Gui {
 			catch(Exception ex) {
 				msgError(ex, "Could not generate new database.", false);
 			}
+			*/
 		}
 	}
 
@@ -1262,12 +1275,7 @@ public class Editor extends Gui {
 		}
 
 		public void updateLog(DocumentEvent e, String action) {
-			if(editor.textFieldChanged == false && editor.locked == false) {
-				editor.textFieldChanged = true;
-
-				editor.saveItem.setEnabled(true);
-				editor.saveItem.setBackground(Color.YELLOW);
-			}
+			noticeFieldChange();
 		}
 	}
 
@@ -1318,7 +1326,6 @@ public class Editor extends Gui {
 		 * @param e the ActionEvent to process
 		 */
 		public void actionPerformed(ActionEvent e) {
-
 			editor.dynTree.setCategoryFilter(editor.categoryList.getSelectedIndex());
 
 			editor.showItem();
@@ -1346,14 +1353,7 @@ public class Editor extends Gui {
 		 * @param e the ActionEvent to process
 		 */
 		public void actionPerformed(ActionEvent e) {
-			//System.out.println(editor.textFieldChanged);
-
-			if(editor.textFieldChanged == false && editor.locked == false) {
-				editor.textFieldChanged = true;
-
-				editor.saveItem.setEnabled(true);
-				editor.saveItem.setBackground(Color.YELLOW);
-			}
+			noticeFieldChange();
 		}
 	}
 
@@ -1412,13 +1412,12 @@ public class Editor extends Gui {
 		public void actionPerformed(ActionEvent e) {
 			if(editor.locked == false) {
 				editor.setBtnLock(true, true);
-				editor.enableButtonsAndFields(false);
+				editor.toggleButtonsAndFields(false, false);
 				editor.clearItem();
 			}
 			else {
 				if(editor.checkPassword() == true) {
 					editor.setBtnLock(false, true);
-					editor.enableButtonsAndFields(true);
 					editor.showItem();
 				}
 			}

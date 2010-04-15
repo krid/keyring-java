@@ -358,8 +358,16 @@ public class Ring {
 		return salt;
 	}
 
+	/**
+	 * @return Ordered list of category names, without the "All" pseudo-category,
+	 * and with "Unfiled" at the top.
+	 */
 	public Vector<String> getCategories() {
-		return new Vector<String>(categoriesByName.keySet());
+		Vector<String> cats = new Vector<String>(categoriesByName.keySet());
+		cats.remove("All");
+		cats.remove("Unfiled");
+		cats.add(0, "Unfiled");
+		return cats;
 	}
 	
 	public synchronized int categoryIdForName(String categoryName) {
@@ -430,6 +438,7 @@ public class Ring {
 	 * the key is good, and loading is complete.  If not, it's a bad password.
 	 * @throws GeneralSecurityException 
 	 */
+	@SuppressWarnings("unchecked")
 	private boolean decryptLoadedData() throws GeneralSecurityException {
 		log("decryptLoadedData()");
 		JSONObject obj;
@@ -451,6 +460,7 @@ public class Ring {
 		log("Depot data loaded");
 
 		// We've got our data, pull it apart into usable pieces
+		// TODO What if the decrypted data isn't a Keyring backup?
 		Map<String, JSONObject> rawDb = (Map<String, JSONObject>) obj.get("db");
 		for (Map.Entry<String, JSONObject> ent : rawDb.entrySet()) {
 			String title = ent.getKey();
@@ -461,11 +471,14 @@ public class Ring {
 		// Handle categories
 		categoriesById = new HashMap<Integer, String>();
 		categoriesByName = new TreeMap<String, Integer>();
-		Map<String, String> tmpCats = (Map<String, String>) obj.get("categories");
-		for (Map.Entry<String, String> cat : tmpCats.entrySet()) {
-			int id = Integer.parseInt(cat.getKey());
-			categoriesById.put(id, cat.getValue());
-			categoriesByName.put(cat.getValue(), id);
+		Object tmp = obj.get("categories");
+		if (null != tmp) {
+			Map<String, String> tmpCats = (Map<String, String>) tmp;
+			for (Map.Entry<String, String> cat : tmpCats.entrySet()) {
+				int id = Integer.parseInt(cat.getKey());
+				categoriesById.put(id, cat.getValue());
+				categoriesByName.put(cat.getValue(), id);
+			}
 		}
 		// make sure we always have the "all" and "unfiled" categories
 		setDefaultCategories();
@@ -474,7 +487,6 @@ public class Ring {
 
 		// For now, just stash prefs as a JSONObject
 		prefs = (JSONObject) obj.get("prefs");
-		log(null == prefs ? "no prefs" : prefs.toJSONString());
 		
 		fullyLoaded = true;
 		

@@ -1,25 +1,27 @@
 /*
-KeyringEditor
-
-Copyright 2004 Markus Griessnig
-Vienna University of Technology
-Institute of Computer Technology
-
-KeyringEditor is based on:
-Java Keyring v0.6
-Copyright 2004 Frank Taylor <keyring@lieder.me.uk>
-
-These programs are distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details.
-*/
-
-// DynamicTree.java
-
-// 22.11.2004
-
-// 24.11.2004: added getTree()
-// 08.12.2004: populateTree() updated
+ * @author Dirk Bergstrom
+ *
+ * Keyring Desktop Client - Easy password management on your phone or desktop.
+ * Copyright (C) 2009-2010, Dirk Bergstrom, keyring@otisbean.com
+ * 
+ * Adapted from KeyringEditor v1.1
+ * Copyright 2006 Markus Griessnig
+ * http://www.ict.tuwien.ac.at/keyring/
+ * Markus graciously gave his assent to release the modified code under the GPLv3.
+ *     
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 package com.otisbean.keyring.gui;
 
@@ -42,11 +44,24 @@ import com.otisbean.keyring.Ring;
 
 /**
  * This class is used to view and manipulate the entries in the tree view.
+ * 
+ * FIXME Replace the DynamicTree with a JList, since we're not using the
+ * tree aspect at all.
+ * 
+ * public class RingListModel extends AbstractListModel { ... }
+ * 
+ * RingListModel rlm = new RingListModel();
+ * JList list = new JList(rlm);
+ * list.addListSelectionListener(new ListSelectionListener() {
+ *    public void valueChanged(ListSelectionEvent e) {
+ *        if (!e.getValueIsAdjusting()) {
+ *            Item item = (Item) list.getSelectedValue();
+ *            showItem(item);
+ *        }
+ *    }
+ * });
  */
 public class DynamicTree extends JPanel {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	// ----------------------------------------------------------------
@@ -103,12 +118,12 @@ public class DynamicTree extends JPanel {
 	// public ---------------------------------------------------------
 	// ----------------------------------------------------------------
 
-	// get item
 	/**
 	 * This method selects a tree node according to the item object.
 	 *
 	 * @param newitem Item object
 	 */
+	@SuppressWarnings("unchecked")
 	public void show(Object newitem) {
 		Object nodeInfo;
 		
@@ -117,7 +132,7 @@ public class DynamicTree extends JPanel {
 		for(Enumeration enum1 = rootNode.depthFirstEnumeration(); enum1.hasMoreElements(); ) {
 			node = (DefaultMutableTreeNode) enum1.nextElement();
 			
-			if(node != null) {
+			if(null != node) {
 				if(node.isLeaf()) {
 					nodeInfo = node.getUserObject();
 					
@@ -142,7 +157,6 @@ public class DynamicTree extends JPanel {
 		return tree;
 	}
 
-	// category filter
 	/**
 	 * This method sets the category-filter and refreshes the tree view.
 	 *
@@ -165,7 +179,6 @@ public class DynamicTree extends JPanel {
 		populate();
 	}
 
-	// get Item
 	/**
 	 * This method returns the item data of the tree node.
 	 *
@@ -179,22 +192,18 @@ public class DynamicTree extends JPanel {
 		return (Item)nodeInfo;
 	}
 
-	// get last selected path component
 	/**
 	 * This method returns the last selected tree node.
 	 *
 	 * @return DefaultMutableTreeNode or null if node is not a leaf
 	 */
 	public DefaultMutableTreeNode getLastNode() {
-		DefaultMutableTreeNode temp = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
-
-		if(temp != null) {
-			if(temp.isLeaf()) {
-				return temp;
-			}
+		DefaultMutableTreeNode temp = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+		if (null != temp && temp.isLeaf()) {
+			return temp;
+		} else {
+			return null;
 		}
-
-		return null;
 	}
 
 	// reload TreeModel
@@ -236,140 +245,36 @@ public class DynamicTree extends JPanel {
 	 * This method populates the tree with entries.
 	 */
 	public void populate() {
-		int i;
-		int start;
-		String parent;
-		String child;
-		DefaultMutableTreeNode node;
-		DefaultMutableTreeNode startNode;
-
 		clear();
-
-		rootNode.setUserObject(editor.getFilename());
 
 		// sort Entries
 		Ring myRing = editor.getRing();
 		if(myRing == null) {
 			return;
 		}
-
 		Vector<Item> myEntries = new Vector<Item>(myRing.getItems());
+		// TODO User selectable sorting of entries
 		Collections.sort(myEntries); // sort entries by title
 
+		rootNode.setUserObject(editor.getFilename());
+		
+		DefaultMutableTreeNode firstNode = null;
 		for(Item item : myEntries) {
-			Dummy dummy;
-
-			if(filterCategory != 0) {
-				if((filterCategory - 1) != item.getCategoryId()) {
-					continue;
-				}
+			if (filterCategory != 0 &&
+					(filterCategory - 1) != item.getCategoryId()) {
+				continue;
 			}
-
-			start = 0;
-			startNode = rootNode;
-
-			// search for separator
-			// FIXME Not sure what this separator stuff is about...
-			String title = item.getTitle();
-			while((i = title.indexOf(editor.getSeparator(), start)) != -1) {
-				parent = title.substring(start, i);
-				child = title.substring(i + 1, title.length());
-				start = i + 1;
-
-				node = searchForBranchNode(startNode, parent);
-
-				if(node == null) {
-					// new branch node
-					dummy = new Dummy(parent);
-					node = addObject(startNode, (Object)dummy, true); // parent node
-				}
-
-				startNode = node;
+			DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(item);
+			treeModel.insertNodeInto(childNode, rootNode, rootNode.getChildCount());
+			if (null == firstNode) {
+				firstNode = childNode;
 			}
-
-			addObject(startNode, (Object)item, true); // leaf
 		}
-	}
-
-	// add object
-	/**
-	 * This method adds a node to the tree.
-	 *
-	 * @param parent Parent node
-	 * @param child Object to add
-	 * @param shouldBeVisible show new node
-	 */
-	public DefaultMutableTreeNode addObject(
-		DefaultMutableTreeNode parent,
-		Object child,
-		boolean shouldBeVisible) {
-
-		DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(child);
-
-		if(parent == null) {
-			parent = rootNode;
+		
+		// Expand tree
+		if (null != firstNode) {
+			tree.scrollPathToVisible(new TreePath(firstNode.getPath()));
 		}
-
-		treeModel.insertNodeInto(childNode, parent, parent.getChildCount());
-
-		if(shouldBeVisible) {
-			tree.scrollPathToVisible(new TreePath(childNode.getPath()));
-		}
-
-		return childNode;
-	}
-
-	// ----------------------------------------------------------------
-	// private --------------------------------------------------------
-	// ----------------------------------------------------------------
-
-	/**
-	 * This method searches if category exists as a branch node.
-	 *
-	 * @param root Root node
-	 * @param category Node to search for
-	 */
-	private static DefaultMutableTreeNode searchForBranchNode(DefaultMutableTreeNode root, String category) {
-		Enumeration e = root.children();
-		DefaultMutableTreeNode node;
-		Dummy branch;
-
-		while(e.hasMoreElements()) {
-			node = (DefaultMutableTreeNode)e.nextElement();
-			try {
-				branch = (Dummy)node.getUserObject();
-
-				if(category.equals(branch.toString())) {
-					return node;
-				}
-			}
-			catch(Exception ex) {}; // ignore Item objects
-		}
-
-		return null;
-	}
-
-	// used for branch nodes
-	/**
-	 * This class is used to present branch nodes in the tree view.
-	 */
-	private static class Dummy {
-		String title;
-
-		/**
-		 * Default constructor.
-		 *
-		 * @param title Branch node title
-		 */
-		public Dummy(String title) {
-			this.title = title;
-		}
-
-		/**
-		 * This method returns the branch node title.
-		 */
-		public String toString() {
-			return this.title;
-		}
+		treeModel.reload();
 	}
 }

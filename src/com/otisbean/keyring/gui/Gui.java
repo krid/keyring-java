@@ -95,11 +95,6 @@ public class Gui {
 	 */
 	protected class PasswordTimeoutWorker implements Runnable {
 		/**
-		 * Reference to class Editor
-		 */
-		private Editor editor;
-
-		/**
 		 * Time when password timeout started plus user defined password timeout
 		 */
 		private Date endDate = null;
@@ -112,7 +107,6 @@ public class Gui {
 		 * @param editor Reference to class Editor
 		 */
 		public PasswordTimeoutWorker(Editor editor) {
-			this.editor = editor;
 		}
 
 		/**

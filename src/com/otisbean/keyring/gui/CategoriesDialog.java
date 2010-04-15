@@ -24,17 +24,30 @@ See the GNU General Public License for more details.
 
 package com.otisbean.keyring.gui;
 
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*; // property change stuff
+import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.Enumeration;
+import java.util.Vector;
+
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
 /**
  * This dialog allows the user to change the category-names.
  */
 public class CategoriesDialog extends JDialog implements ActionListener, PropertyChangeListener {
+	private static final long serialVersionUID = 1L;
+
 	// ----------------------------------------------------------------
 	// variables
 	// ----------------------------------------------------------------
@@ -61,8 +74,7 @@ public class CategoriesDialog extends JDialog implements ActionListener, Propert
 	/**
 	 * Vector of category-names for the combobox
 	 */
-	//private Vector<String> myCategories; // Java 1.5
-	private Vector myCategories;
+	private Vector<String> myCategories;
 
 	// ----------------------------------------------------------------
 	// constructor
@@ -73,27 +85,22 @@ public class CategoriesDialog extends JDialog implements ActionListener, Propert
 	 * @param frame Reference to the Gui frame
 	 * @param cat Vector of category-names
 	 */
-	public CategoriesDialog(Frame frame, Vector cat) {
+	public CategoriesDialog(Frame frame, Vector<String> cat) {
 		super(frame, "Edit categories", true);
 
 		this.frame = frame;
 
-		//myCategories = new Vector<String>(); // Java 1.5
-		myCategories = new Vector();
+		myCategories = new Vector<String>();
 
 		// generate Vector of category-names for JComboBox
-		for(Enumeration e = cat.elements(); e.hasMoreElements(); ) {
-			//Object temp = e.nextElement(); // Java 1.5
-			//myCategories.add((String)temp); // Java 1.5
-			Object temp = e.nextElement();
-			myCategories.add(temp);
+		for(Enumeration<String> e = cat.elements(); e.hasMoreElements(); ) {
+			myCategories.add(e.nextElement());
 		}
 
 		// resize to 16 categories
 		for(int i=myCategories.size(); i<16; i++) {
 			String empty = new String("- empty -");
-			//myCategories.add(empty); // Java 1.5
-			myCategories.add((Object)empty);
+			myCategories.add(empty);
 		}
 
 		// generate JComboBox with category-names
@@ -153,8 +160,7 @@ public class CategoriesDialog extends JDialog implements ActionListener, Propert
 	 *
 	 * @return Vector of category-names
 	 */
-	//public Vector<String> getNewCategories() { // Java 1.5
-	public Vector getNewCategories() {
+	public Vector<String> getNewCategories() {
 		return myCategories;
 	}
 
@@ -177,8 +183,7 @@ public class CategoriesDialog extends JDialog implements ActionListener, Propert
             index = allCategories.getSelectedIndex();
 		}
 		else {
-           //myCategories.setElementAt(temp, index); // Java 1.5
-            myCategories.setElementAt((Object)temp, index);
+			myCategories.setElementAt(temp, index);
 
             // view selected category
             editCategory.setText((String)allCategories.getSelectedItem());
@@ -219,19 +224,17 @@ public class CategoriesDialog extends JDialog implements ActionListener, Propert
 
 				// save last edited category
 				String lastCategory = editCategory.getText();
-				//myCategories.setElementAt(lastCategory, index); // Java 1.5
-				myCategories.setElementAt((Object)lastCategory, index);
+				myCategories.setElementAt(lastCategory, index);
 
 				// check for empty strings
-				//Vector<String> temp = new Vector<String>(); // Java 1.5
-				Vector temp = new Vector();
-				for(Enumeration elem = myCategories.elements(); elem.hasMoreElements(); ) {
+				Vector<String> temp = new Vector<String>();
+				for(Enumeration<String> elem = myCategories.elements(); elem.hasMoreElements(); ) {
 					String category = (String)elem.nextElement();
 
 					// shrink length to 15 characters (keyring)
 					if(category.length() > 15) {
 						JOptionPane.showMessageDialog(this.frame,
-							"Categoryname '" + category + "' will be shrinked to 15 characters.",
+							"Categoryname '" + category + "' will be truncated to 15 characters.",
 							"Information",
 							JOptionPane.INFORMATION_MESSAGE);
 

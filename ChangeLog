@@ -1,3 +1,41 @@
+2010-04-15  Dirk Bergstrom  <krid@otisbean.com>
+
+	* src/com/otisbean/keyring/Ring.java (decryptLoadedData): Avoid NPE if
+	there's no category data in json.
+	(getCategories): Return category names without the "All" pseudo-category
+	and with "Unfiled" at the top.
+	
+	* src/com/otisbean/keyring/gui/Editor.java (toggleButtonsAndFields): Add
+	additional param to frob state of "new item" button.  Toggle state of
+	category dropdown correctly.  Clear color in "save" button. Adjust callers
+	accordingly.
+	(currentCategory): Treat as a dropdown instead of a combobox.
+	(editCategoriesListener.actionPerformed): Comment out currently unused code.
+	(newListener.actionPerformed): Comment out currently unused code.
+	(noticeFieldChange): Common code factored out of listeners.
+	
+	* src/com/otisbean/keyring/gui/DynamicTree.java: Simplify, remove code
+	dealing with leaf/branch differences, clean up code.  This will (soon?)
+	be replaced with a JList anyways...
+	
+	* src/com/otisbean/keyring/gui/CategoriesDialog.java: Update to use
+	generics.
+
+	* src/com/otisbean/keyring/gui/Prop.java: Clean up imports, update
+	copyright/license.
+	
+	* src/com/otisbean/keyring/gui/PasswordDialog.java: Clean up imports, update
+	copyright/license.
+	
+	* src/com/otisbean/keyring/gui/NewItemDialog.java: Update copyright/license,
+	use generics.
+	
+	* src/com/otisbean/keyring/gui/ImportDialog.java: Clean up imports, update
+	copyright/license.
+	
+	* src/com/otisbean/keyring/gui/Gui.java (PasswordTimeoutWorker): Remove
+	reference to unused editor variable.
+	
 2010-04-03  Dirk Bergstrom  <krid@otisbean.com>
 
 	* src/com/otisbean/keyring/converters/EWalletExportConverter.java (readInputFile):

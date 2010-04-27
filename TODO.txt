@@ -1,0 +1,112 @@
+USABILITY
+
+*) retry on bad password
+
+*) open shouldn't require close first
+
+*) Icon in about window.
+
+*) Help screen
+
+*) Use JList instead of tree
+
+*) rendering problems in tree panel (switch to JList may fix problem)
+
+*) Clickable URLs (available in java 6)
+
+*) import dialog should enable/disable password field based on importer type.
+
+*) Turn changed/viewed/added into multiple labels with different text styles.
+
+
+SECURITY
+
+*) URGENT  Timeout doesn't clear current
+
+*) Close file doesn't clear current
+
+*) "lock scene" - clear list for now?
+
+
+FEATURES
+
+*) Sort by
+
+*) Create new db
+
+*) Edit categories
+
+*) import json, with conflict resolution
+
+*) sync
+
+*) import as new or as merge
+ - Need a way to merge from json -- open vs. import
+
+*) Password generator
+
+*) Change password
+
+*) Built in web server
+http://elonen.iki.fi/code/nanohttpd/
+file:///usr/lib/jvm/docs/api/javax/net/ssl/SSLServerSocketFactory.html
+
+Probably not:
+http://www.simpleframework.org/
+http://wiki.eclipse.org/Jetty/Tutorial/Embedding_Jetty
+http://pygmy-httpd.sourceforge.net/
+
+
+PACKAGING
+
+*) Windows .exe support
+ - Add launch4j stuff to ant build file?
+ - splash screen
+ - use windows look & feel
+ - .ico
+ 
+*) Taskbar icon like webosqi
+
+*) Package as a .deb for Ubuntu
+ - use java look & feel (unless there's a gnome l&f)
+http://wiki.debian.org/Java/Packaging
+
+*) Optimize for OSX
+http://java.sun.com/developer/technicalArticles/JavaLP/JavaToMac/
+http://www.randelshofer.ch/quaqua/
+
+*) Figure out min jdk version
+
+
+PREFERENCES
+
+*) Preferences dialog
+
+*) Save prefs to json
+
+*) Integrate prefs with webOS prefs
+ - timeout
+ - lock to
+ - on deactivate (minimize)?
+ - sort by
+ - pass. gen. defaults
+
+*) Non-pref app state data
+ - last file path
+ - last URL path
+ - Automatically open last file/url?
+
+
+INTERNALS
+
+*) use logging (log4j or java.util.logging) instead of print
+
+*) add logging to gui layer
+
+
+For lots of swing UI goodness, see:
+http://java.sun.com/docs/books/tutorial/ui/overview/demo.html
+http://files.blog-city.com/files/aa/1263/b/swingrocks2.html
+http://kenai.com/projects/bsaf/
+ - http://kenai.com/projects/bsaf/forums/open-discussion/topics/2668-BSAF-Documentation-
+ - http://java.sun.com/developer/technicalArticles/javase/swingappfr/
